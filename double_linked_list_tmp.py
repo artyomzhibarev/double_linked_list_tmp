@@ -73,7 +73,7 @@ class LinkedList:
 
     def __init__(self, data: Sequence = None):
         """Конструктор связного списка"""
-        self.__len = 0
+        self._len = 0
         self.head = None  # Node
         self.tail = None
 
@@ -90,16 +90,16 @@ class LinkedList:
         return f"{self.__class__.__name__}({[value for value in self]})"
 
     def __len__(self):
-        return self.__len
+        return self._len
 
     def __step_by_step_on_nodes(self, index):
         if not isinstance(index, int):
             raise TypeError(f"Index must be {int.__name__} not {index.__class__.__name__}")
 
         if index < 0:
-            index += self.__len
+            index += self._len
 
-        if not -self.__len <= index < self.__len:
+        if not -self._len <= index < self._len:
             raise IndexError(f"{self.__class__.__name__} index out of range")
 
         current_node = self.head
@@ -122,30 +122,19 @@ class LinkedList:
     def __reversed__(self):
         return iter(self[::-1])
 
-    def __value_iterator(self):
+    def _value_iterator(self):
         """
         Generator
         """
+        # print(f'The {self._value_iterator.__name__} method of the {self.__class__.__name__} is called')
         current_node = self.head
-        for _ in range(self.__len):
-            yield current_node
+        for _ in range(self._len):
+            yield current_node.value
             current_node = current_node.next
-            # if current_node.next.value is None:
-            #     raise StopIteration
 
     def __iter__(self):
-        print(f'Method __iter__ called')
-        return self.__value_iterator()
-
-    # def __next__(self):
-    #     print(f'Method __next__ called')
-    #     if self.current_iter_node is None:
-    #         raise StopIteration
-    #
-    #     value = self.current_iter_node.value
-    #     self.current_iter_node = self.current_iter_node.next
-    #
-    #     return value
+        # print(f'The {self.__iter__.__name__} method of the {self.__class__.__name__} is called')
+        return self._value_iterator()
 
     def append(self, value: Any):
         """Добавление элемента в конец связного списка"""
@@ -157,7 +146,7 @@ class LinkedList:
             self.__linked_nodes(self.tail, append_node)
             self.tail = append_node
 
-        self.__len += 1
+        self._len += 1
 
     @staticmethod
     def __linked_nodes(left: Node, right: Optional[Node]) -> None:
@@ -246,6 +235,8 @@ class LinkedList:
 
 class DoubleLinkedList(LinkedList):
     class DoubleLinkedNode(LinkedList.Node):
+        """Конструктор DoubleLinkedNode"""
+
         def __init__(self, value: Any,
                      next_: Optional['Node'] = None,
                      prev: Optional['Node'] = None
@@ -271,16 +262,70 @@ class DoubleLinkedList(LinkedList):
             self.__prev = prev
 
     def __init__(self, data: Sequence = None):
-        """Конструктор связного списка"""
+        """Конструктор DoubleLinkedList"""
         super().__init__(data)
-        ...
 
-    # - **`__str__`**
-    # - **`__repr__`**
-    # - **`__getitem__`**
-    # - **`__setitem__`**
-    # - **`__len__`**
-    # - **`insert`**
+    def __repr__(self):
+        """Метод должен возвращать строку, показывающую, как может быть создан экземпляр."""
+        return f"{self.__class__.__name__}({[value for value in self]})"
+
+    @staticmethod
+    def __linked_nodes(left: DoubleLinkedNode, right: Optional[DoubleLinkedNode]) -> None:
+        left.next = right
+        right.prev = left
+
+    def __step_by_step_on_nodes_forward(self, index):
+        current_node = self.head
+        for _ in range(index):
+            current_node = current_node.next
+
+        return current_node
+
+    def __step_by_step_on_nodes_backforward(self, index):
+        current_node = self.tail
+        for _ in range(index):
+            current_node = current_node.prev
+
+        return current_node
+
+    def __step_by_step_check(self, index):
+        if not isinstance(index, int):
+            raise TypeError(f"Index must be {int.__name__} not {index.__class__.__name__}")
+        if not -self._len <= index < self._len:
+            raise IndexError(f"{self.__class__.__name__} index out of range")
+
+    def insert(self, index: int, value: Any) -> None:
+        if not isinstance(index, int):
+            raise TypeError()
+
+        if index < 0:
+            index += self._len
+
+        self.__step_by_step_check(index)
+
+        if index == 0:
+            insert_node = self.DoubleLinkedNode(value)
+            self.__linked_nodes(insert_node, self.head)
+            self.head = insert_node
+            self._len += 1
+
+        elif 0 < index <= self._len // 2:
+            prev_node = self.__step_by_step_on_nodes_forward(index - 1)
+            current_node = prev_node.next
+            insert_node = self.DoubleLinkedNode(value, next_=current_node)
+            self.__linked_nodes(prev_node, insert_node)
+            self._len += 1
+
+        elif self._len // 2 < index < self._len:
+            prev_node = self.__step_by_step_on_nodes_backforward(index - 1)
+            current_node = prev_node.next
+            insert_node = self.DoubleLinkedNode(value, next_=current_node)
+            self.__linked_nodes(prev_node, insert_node)
+            self._len += 1
+
+        elif index >= self._len:
+            self.append(value)
+
     # - **`index`**
     # - **`remove`**
     # - **`append`**
@@ -288,8 +333,17 @@ class DoubleLinkedList(LinkedList):
 
 
 if __name__ == '__main__':
-    ll = LinkedList([1, 2, 3, 4, 5, 6, 7])
-    dll = DoubleLinkedList([1, 2, 3, 4, 5, 6, 7])
+    # ll = LinkedList([1, 2, 3, 4, 5, 6, 7])
+    # print(ll.__str__())
+    dll = DoubleLinkedList([1, 2, 3, 4, 5])
+    # dll.append(45)
     print(dll)
-    print(ll)
+    print(dll[0])
+    print(dll[-4])
+    dll[0] = 56
+    print(dll)
+    # dll.insert(0, 88)
+    # print(dll)
+    # dll.insert(1, 99)
+    # print(dll)
 
